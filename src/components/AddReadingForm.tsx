@@ -16,12 +16,16 @@ export function AddReadingForm({ patients }: { patients: Patient[] }) {
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(readingSchema),
     mode: "onSubmit",
     reValidateMode: "onSubmit",
   });
+
+  const selectedPatient = watch("patient_id");
 
   async function onSubmit(data: any) {
     if (submitting) return;
@@ -54,17 +58,30 @@ export function AddReadingForm({ patients }: { patients: Patient[] }) {
 
       <div>
         <label className="block text-sm font-medium text-gray-700">Patient</label>
-        <select
-          {...register("patient_id")}
-          className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        >
-          <option value="">Select patient...</option>
-          {patients.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.full_name}
-            </option>
-          ))}
-        </select>
+        <div className="relative">
+          <select
+            {...register("patient_id")}
+            className="mt-1 block w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 pr-8 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            <option value="">Select patient...</option>
+            {patients.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.full_name}
+              </option>
+            ))}
+          </select>
+          {selectedPatient && (
+            <button
+              type="button"
+              onClick={() => setValue("patient_id", "")}
+              className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
         {errors.patient_id && (
           <p className="mt-1 text-xs text-red-600">{errors.patient_id.message}</p>
         )}
