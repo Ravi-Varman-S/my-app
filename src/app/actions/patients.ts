@@ -28,17 +28,21 @@ export async function addPatient(formData: {
     .limit(1);
 
   if (existing && existing.length > 0) {
-    return { error: `A patient named "${name}" already exists.` };
+    return { error: `A patient named "${name}" already exists.`, id: null };
   }
 
-  const { error } = await supabase.from("patients").insert({
-    full_name: name,
-    date_of_birth: formData.date_of_birth,
-  });
+  const { data, error } = await supabase
+    .from("patients")
+    .insert({
+      full_name: name,
+      date_of_birth: formData.date_of_birth,
+    })
+    .select("id")
+    .single();
 
   if (error) throw error;
   revalidatePath("/");
-  return { error: null };
+  return { error: null, id: data.id };
 }
 
 export async function deletePatient(id: string) {
