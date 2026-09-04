@@ -48,9 +48,7 @@ export function AddReadingForm({ patients }: { patients: Patient[] }) {
     (p, i, arr) => arr.findIndex((x) => x.full_name === p.full_name) === i
   );
 
-  const sortedPatients = [...uniquePatients].sort((a, b) =>
-    b.id.localeCompare(a.id)
-  );
+  const sortedPatients = [...uniquePatients];
 
   const filtered = sortedPatients.filter((p) =>
     p.full_name.toLowerCase().includes(search.toLowerCase())
