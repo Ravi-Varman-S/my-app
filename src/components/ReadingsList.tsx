@@ -6,7 +6,7 @@ import { AcknowledgeButton } from "@/components/AcknowledgeButton";
 import { deleteReading } from "@/app/actions/readings";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import type { VitalReading } from "@/lib/thresholds";
+import type { Patient, VitalReading } from "@/lib/thresholds";
 
 function LocalTime({ utcString }: { utcString: string }) {
   const [mounted, setMounted] = useState(false);
@@ -14,6 +14,13 @@ function LocalTime({ utcString }: { utcString: string }) {
   if (!mounted) return <span className="text-gray-400">…</span>;
   const date = new Date(utcString);
   return <>{date.toLocaleString()}</>;
+}
+
+function getPatient(reading: VitalReading): Patient | null {
+  const p = reading.patients;
+  if (!p) return null;
+  if (Array.isArray(p)) return p[0] ?? null;
+  return p;
 }
 
 export function ReadingsList({ readings }: { readings: VitalReading[] }) {
@@ -63,14 +70,15 @@ export function ReadingsList({ readings }: { readings: VitalReading[] }) {
           {readings.map((r) => {
             const breaches = checkBreaches(r);
             const hasBreach = breaches.length > 0 && r.status !== "acknowledged";
-            const age = r.patients?.date_of_birth ? calculateAge(r.patients.date_of_birth) : null;
+            const patient = getPatient(r);
+            const age = patient?.date_of_birth ? calculateAge(patient.date_of_birth) : null;
             return (
               <tr
                 key={r.id}
                 className={hasBreach ? "bg-red-50" : "bg-white"}
               >
                 <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
-                  {r.patients?.full_name ?? "Unknown Patient"}
+                  {patient?.full_name ?? "Unknown Patient"}
                 </td>
                 <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
                   {age != null ? `${age}y` : "—"}

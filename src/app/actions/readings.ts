@@ -6,13 +6,27 @@ import { revalidatePath } from "next/cache";
 export async function getReadings(search?: string, status?: string) {
   const supabase = await createClient();
 
+  let matchingPatientIds: string[] | null = null;
+
+  if (search) {
+    const { data: matchedPatients, error: patientError } = await supabase
+      .from("patients")
+      .select("id")
+      .ilike("full_name", `%${search}%`);
+
+    if (patientError) throw patientError;
+    matchingPatientIds = matchedPatients?.map((p) => p.id) ?? [];
+
+    if (matchingPatientIds.length === 0) return [];
+  }
+
   let query = supabase
     .from("vitals_readings")
     .select("*, patients(*)")
     .order("recorded_at", { ascending: false });
 
-  if (search) {
-    query = query.ilike("patients.full_name", `%${search}%`);
+  if (matchingPatientIds) {
+    query = query.in("patient_id", matchingPatientIds);
   }
 
   if (status === "pending") {
