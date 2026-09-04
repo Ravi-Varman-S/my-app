@@ -31,7 +31,7 @@ export function StatusFilter() {
     <select
       value={current}
       onChange={(e) => handleChange(e.target.value)}
-      className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+      className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
     >
       {STATUS_OPTIONS.map((opt) => (
         <option key={opt.value} value={opt.value}>

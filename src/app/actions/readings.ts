@@ -38,6 +38,18 @@ export async function acknowledgeReading(id: string) {
   revalidatePath("/");
 }
 
+export async function deleteReading(id: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("vitals_readings")
+    .delete()
+    .eq("id", id);
+
+  if (error) throw error;
+  revalidatePath("/");
+}
+
 export async function addReading(formData: {
   patient_id: string;
   heart_rate_bpm: number | null;
