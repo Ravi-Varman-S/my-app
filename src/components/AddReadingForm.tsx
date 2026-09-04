@@ -5,13 +5,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { readingSchema } from "@/lib/validations";
 import { addReading } from "@/app/actions/readings";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { Patient } from "@/lib/thresholds";
 
 export function AddReadingForm({ patients }: { patients: Patient[] }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const {
     register,
@@ -26,6 +29,33 @@ export function AddReadingForm({ patients }: { patients: Patient[] }) {
   });
 
   const selectedPatient = watch("patient_id");
+  const selectedName = patients.find((p) => p.id === selectedPatient)?.full_name ?? "";
+
+  const filtered = patients.filter((p) =>
+    p.full_name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setSearch("");
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  function selectPatient(id: string) {
+    setValue("patient_id", id, { shouldValidate: true });
+    setOpen(false);
+    setSearch("");
+  }
+
+  function clearPatient() {
+    setValue("patient_id", "", { shouldValidate: true });
+    setSearch("");
+  }
 
   async function onSubmit(data: any) {
     if (submitting) return;
@@ -58,30 +88,64 @@ export function AddReadingForm({ patients }: { patients: Patient[] }) {
 
       <div>
         <label className="block text-sm font-medium text-gray-700">Patient</label>
-        <div className="relative">
-          <select
-            {...register("patient_id")}
-            className="mt-1 block w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 pr-8 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        <div className="relative" ref={dropdownRef}>
+          <div
+            onClick={() => setOpen(!open)}
+            className="mt-1 flex cursor-pointer items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 hover:border-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
-            <option value="">Select patient...</option>
-            {patients.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.full_name}
-              </option>
-            ))}
-          </select>
-          {selectedPatient && (
-            <button
-              type="button"
-              onClick={() => setValue("patient_id", "")}
-              className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <span className={selectedName ? "" : "text-gray-400"}>
+              {selectedName || "Select patient..."}
+            </span>
+            <div className="flex items-center gap-1">
+              {selectedPatient && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); clearPatient(); }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+              <svg className={`h-4 w-4 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
-            </button>
+            </div>
+          </div>
+          {open && (
+            <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
+              <div className="border-b border-gray-100 p-2">
+                <input
+                  type="text"
+                  placeholder="Search patients..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none"
+                  autoFocus
+                />
+              </div>
+              <ul className="max-h-48 overflow-y-auto py-1">
+                {filtered.length === 0 ? (
+                  <li className="px-3 py-2 text-sm text-gray-500">No patients found</li>
+                ) : (
+                  filtered.map((p) => (
+                    <li
+                      key={p.id}
+                      onClick={() => selectPatient(p.id)}
+                      className={`cursor-pointer px-3 py-2 text-sm hover:bg-blue-50 ${
+                        p.id === selectedPatient ? "bg-blue-100 text-blue-700" : "text-gray-900"
+                      }`}
+                    >
+                      {p.full_name}
+                    </li>
+                  ))
+                )}
+              </ul>
+            </div>
           )}
         </div>
+        <input type="hidden" {...register("patient_id")} />
         {errors.patient_id && (
           <p className="mt-1 text-xs text-red-600">{errors.patient_id.message}</p>
         )}
