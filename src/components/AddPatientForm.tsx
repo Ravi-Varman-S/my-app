@@ -5,12 +5,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { patientSchema, type PatientFormInput } from "@/lib/validations";
 import { addPatient } from "@/app/actions/patients";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 
 export function AddPatientForm() {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const {
     register,
@@ -18,18 +18,22 @@ export function AddPatientForm() {
     formState: { errors },
   } = useForm<PatientFormInput>({
     resolver: zodResolver(patientSchema),
+    mode: "onSubmit",
+    reValidateMode: "onSubmit",
   });
 
-  function onSubmit(data: PatientFormInput) {
+  async function onSubmit(data: PatientFormInput) {
+    if (submitting) return;
     setError(null);
-    startTransition(async () => {
-      try {
-        await addPatient(data);
-        router.push("/");
-      } catch (e: any) {
-        setError(e.message ?? "Failed to add patient");
-      }
-    });
+    setSubmitting(true);
+    try {
+      await addPatient(data);
+      router.push("/");
+    } catch (e: any) {
+      setError(e.message ?? "Failed to add patient");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -45,7 +49,7 @@ export function AddPatientForm() {
         <input
           type="text"
           {...register("full_name")}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           placeholder="e.g. Jane Smith"
         />
         {errors.full_name && (
@@ -58,7 +62,7 @@ export function AddPatientForm() {
         <input
           type="date"
           {...register("date_of_birth")}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
         {errors.date_of_birth && (
           <p className="mt-1 text-xs text-red-600">{errors.date_of_birth.message}</p>
@@ -67,10 +71,10 @@ export function AddPatientForm() {
 
       <button
         type="submit"
-        disabled={isPending}
+        disabled={submitting}
         className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
       >
-        {isPending ? "Adding..." : "Add Patient"}
+        {submitting ? "Adding..." : "Add Patient"}
       </button>
     </form>
   );

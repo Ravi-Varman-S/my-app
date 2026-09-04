@@ -5,13 +5,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { readingSchema } from "@/lib/validations";
 import { addReading } from "@/app/actions/readings";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import type { Patient } from "@/lib/thresholds";
 
 export function AddReadingForm({ patients }: { patients: Patient[] }) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const {
     register,
@@ -19,25 +19,29 @@ export function AddReadingForm({ patients }: { patients: Patient[] }) {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(readingSchema),
+    mode: "onSubmit",
+    reValidateMode: "onSubmit",
   });
 
-  function onSubmit(data: any) {
+  async function onSubmit(data: any) {
+    if (submitting) return;
     setError(null);
-    startTransition(async () => {
-      try {
-        await addReading({
-          patient_id: data.patient_id,
-          heart_rate_bpm: data.heart_rate_bpm ? Number(data.heart_rate_bpm) : null,
-          blood_pressure: data.blood_pressure || null,
-          spo2_percent: data.spo2_percent ? Number(data.spo2_percent) : null,
-          temperature_c: data.temperature_c ? Number(data.temperature_c) : null,
-          notes: data.notes || null,
-        });
-        router.push("/");
-      } catch (e: any) {
-        setError(e.message ?? "Failed to add reading");
-      }
-    });
+    setSubmitting(true);
+    try {
+      await addReading({
+        patient_id: data.patient_id,
+        heart_rate_bpm: data.heart_rate_bpm ? Number(data.heart_rate_bpm) : null,
+        blood_pressure: data.blood_pressure || null,
+        spo2_percent: data.spo2_percent ? Number(data.spo2_percent) : null,
+        temperature_c: data.temperature_c ? Number(data.temperature_c) : null,
+        notes: data.notes || null,
+      });
+      router.push("/");
+    } catch (e: any) {
+      setError(e.message ?? "Failed to add reading");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -52,7 +56,7 @@ export function AddReadingForm({ patients }: { patients: Patient[] }) {
         <label className="block text-sm font-medium text-gray-700">Patient</label>
         <select
           {...register("patient_id")}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           <option value="">Select patient...</option>
           {patients.map((p) => (
@@ -73,7 +77,7 @@ export function AddReadingForm({ patients }: { patients: Patient[] }) {
             type="number"
             step="0.1"
             {...register("heart_rate_bpm")}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             placeholder="e.g. 72"
           />
           {errors.heart_rate_bpm && (
@@ -85,7 +89,7 @@ export function AddReadingForm({ patients }: { patients: Patient[] }) {
           <input
             type="text"
             {...register("blood_pressure")}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             placeholder="120/80"
           />
           {errors.blood_pressure && (
@@ -98,7 +102,7 @@ export function AddReadingForm({ patients }: { patients: Patient[] }) {
             type="number"
             step="0.1"
             {...register("spo2_percent")}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             placeholder="Optional"
           />
         </div>
@@ -108,7 +112,7 @@ export function AddReadingForm({ patients }: { patients: Patient[] }) {
             type="number"
             step="0.1"
             {...register("temperature_c")}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             placeholder="Optional"
           />
         </div>
@@ -119,17 +123,17 @@ export function AddReadingForm({ patients }: { patients: Patient[] }) {
         <textarea
           {...register("notes")}
           rows={2}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           placeholder="Optional"
         />
       </div>
 
       <button
         type="submit"
-        disabled={isPending}
+        disabled={submitting}
         className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
       >
-        {isPending ? "Adding..." : "Add Reading"}
+        {submitting ? "Adding..." : "Add Reading"}
       </button>
     </form>
   );
