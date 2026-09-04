@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { acknowledgeReading } from "@/app/actions/readings";
 
 export function AcknowledgeButton({
@@ -11,6 +12,7 @@ export function AcknowledgeButton({
   acknowledged: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   if (acknowledged) {
     return (
@@ -23,6 +25,7 @@ export function AcknowledgeButton({
       onClick={() => {
         startTransition(async () => {
           await acknowledgeReading(readingId);
+          router.refresh();
         });
       }}
       disabled={isPending}

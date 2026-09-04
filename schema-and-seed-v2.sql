@@ -32,9 +32,11 @@ ALTER TABLE patients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE vitals_readings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "patients_select" ON patients FOR SELECT USING (true);
 CREATE POLICY "patients_insert" ON patients FOR INSERT WITH CHECK (true);
+CREATE POLICY "patients_delete" ON patients FOR DELETE USING (true);
 CREATE POLICY "vitals_readings_select" ON vitals_readings FOR SELECT USING (true);
 CREATE POLICY "vitals_readings_insert" ON vitals_readings FOR INSERT WITH CHECK (true);
 CREATE POLICY "vitals_readings_update" ON vitals_readings FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "vitals_readings_delete" ON vitals_readings FOR DELETE USING (true);
 
 -- Seed 12 patients
 INSERT INTO patients (id, full_name, date_of_birth) VALUES

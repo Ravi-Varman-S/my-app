@@ -1,7 +1,7 @@
 -- Row Level Security policies for vitals review queue
 -- All visitors are treated as authorized users (no login required)
 
--- Patients: read and insert only (no delete)
+-- Patients: read, insert, and delete
 ALTER TABLE patients ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "patients_select"
@@ -12,7 +12,11 @@ CREATE POLICY "patients_insert"
   ON patients FOR INSERT
   WITH CHECK (true);
 
--- Vitals readings: read, insert, and update (for acknowledge) — no delete
+CREATE POLICY "patients_delete"
+  ON patients FOR DELETE
+  USING (true);
+
+-- Vitals readings: read, insert, update (for acknowledge), and delete
 ALTER TABLE vitals_readings ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "vitals_readings_select"
@@ -27,3 +31,7 @@ CREATE POLICY "vitals_readings_update"
   ON vitals_readings FOR UPDATE
   USING (true)
   WITH CHECK (true);
+
+CREATE POLICY "vitals_readings_delete"
+  ON vitals_readings FOR DELETE
+  USING (true);
