@@ -28,7 +28,7 @@ export async function addPatient(formData: {
     .limit(1);
 
   if (existing && existing.length > 0) {
-    throw new Error(`A patient named "${name}" already exists.`);
+    return { error: `A patient named "${name}" already exists.` };
   }
 
   const { error } = await supabase.from("patients").insert({
@@ -38,6 +38,7 @@ export async function addPatient(formData: {
 
   if (error) throw error;
   revalidatePath("/");
+  return { error: null };
 }
 
 export async function deletePatient(id: string) {

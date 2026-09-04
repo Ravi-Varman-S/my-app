@@ -27,8 +27,12 @@ export function AddPatientForm() {
     setError(null);
     setSubmitting(true);
     try {
-      await addPatient(data);
-      router.push("/");
+      const result = await addPatient(data);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        router.push("/");
+      }
     } catch (e: any) {
       setError(e.message ?? "Failed to add patient");
     } finally {
