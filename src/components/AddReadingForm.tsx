@@ -31,7 +31,11 @@ export function AddReadingForm({ patients }: { patients: Patient[] }) {
   const selectedPatient = watch("patient_id");
   const selectedName = patients.find((p) => p.id === selectedPatient)?.full_name ?? "";
 
-  const filtered = patients.filter((p) =>
+  const uniquePatients = patients.filter(
+    (p, i, arr) => arr.findIndex((x) => x.full_name === p.full_name) === i
+  );
+
+  const filtered = uniquePatients.filter((p) =>
     p.full_name.toLowerCase().includes(search.toLowerCase())
   );
 
