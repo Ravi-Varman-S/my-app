@@ -8,7 +8,7 @@ export async function getPatients(search?: string) {
 
   let query = supabase
     .from("patients")
-    .select("*, vitals_readings(id, status, recorded_at, heart_rate_bpm, blood_pressure)")
+    .select("*, vitals_readings(id, status, recorded_at, heart_rate_bpm, blood_pressure, spo2_percent, temperature_c)")
     .order("created_at", { ascending: false });
 
   if (search) {
@@ -23,9 +23,29 @@ export async function getPatients(search?: string) {
     const latest = readings[0] ?? null;
     const pendingCount = readings.filter((r: any) => r.status === "pending").length;
     const criticalCount = readings.filter((r: any) => {
-      if (!r.heart_rate_bpm || !r.blood_pressure) return false;
-      const [sys] = r.blood_pressure.split("/").map(Number);
-      return r.heart_rate_bpm < 50 || r.heart_rate_bpm > 120 || sys < 90 || sys > 180;
+      const breaches: string[] = [];
+
+      if (r.heart_rate_bpm != null) {
+        if (r.heart_rate_bpm < 50 || r.heart_rate_bpm > 120) breaches.push("hr");
+      }
+
+      if (r.blood_pressure) {
+        const parts = r.blood_pressure.split("/");
+        if (parts.length === 2) {
+          const sys = Number(parts[0]);
+          const dia = Number(parts[1]);
+          if (sys < 90 || sys > 180) breaches.push("sys");
+          if (dia > 120) breaches.push("dia");
+        }
+      }
+
+      if (r.spo2_percent != null && r.spo2_percent < 90) breaches.push("spo2");
+
+      if (r.temperature_c != null) {
+        if (r.temperature_c < 35 || r.temperature_c >= 39) breaches.push("temp");
+      }
+
+      return breaches.length > 0;
     }).length;
 
     return {

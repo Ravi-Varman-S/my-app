@@ -9,7 +9,13 @@ import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import type { Patient } from "@/lib/thresholds";
 
-export function AddReadingForm({ patients }: { patients: Patient[] }) {
+export function AddReadingForm({
+  patients,
+  defaultPatientId,
+}: {
+  patients: Patient[];
+  defaultPatientId?: string;
+}) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -30,7 +36,16 @@ export function AddReadingForm({ patients }: { patients: Patient[] }) {
     resolver: zodResolver(readingSchema),
     mode: "onSubmit",
     reValidateMode: "onSubmit",
+    defaultValues: {
+      patient_id: defaultPatientId || "",
+    },
   });
+
+  useEffect(() => {
+    if (defaultPatientId) {
+      setValue("patient_id", defaultPatientId, { shouldValidate: true });
+    }
+  }, [defaultPatientId, setValue]);
 
   const {
     register: registerPatient,
@@ -117,7 +132,11 @@ export function AddReadingForm({ patients }: { patients: Patient[] }) {
         temperature_c: data.temperature_c ? Number(data.temperature_c) : null,
         notes: data.notes || null,
       });
-      router.push("/");
+      if (defaultPatientId) {
+        router.push(`/patients/${defaultPatientId}`);
+      } else {
+        router.push("/");
+      }
     } catch (e: any) {
       setError(e.message ?? "Failed to add reading");
     } finally {
@@ -135,7 +154,12 @@ export function AddReadingForm({ patients }: { patients: Patient[] }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700">Patient</label>
-            <div className="relative" ref={dropdownRef}>
+            {defaultPatientId ? (
+              <div className="mt-1 rounded-md bg-blue-50 border border-blue-200 px-3 py-2 text-sm font-medium text-blue-800">
+                {selectedName || "Loading..."}
+              </div>
+            ) : (
+              <div className="relative" ref={dropdownRef}>
               <div
                 onClick={() => setOpen(!open)}
                 className="mt-1 flex cursor-pointer items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 hover:border-gray-400"
@@ -201,6 +225,7 @@ export function AddReadingForm({ patients }: { patients: Patient[] }) {
                 </div>
               )}
             </div>
+            )}
             <input type="hidden" {...registerReading("patient_id")} />
             {errors.patient_id && (
               <p className="mt-1 text-xs text-red-600">{errors.patient_id.message}</p>
