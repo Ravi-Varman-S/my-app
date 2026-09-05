@@ -93,6 +93,12 @@ export function EditReadingForm({ reading }: { reading: Reading }) {
         </div>
       )}
 
+      <div className="rounded-md bg-blue-50 p-3">
+        <p className="text-sm font-medium text-blue-800">
+          Updating reading for: <span className="font-bold">{reading.patients?.full_name}</span>
+        </p>
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-gray-700">
           Heart Rate (bpm) *
