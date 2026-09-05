@@ -3,15 +3,61 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
-export async function getPatients() {
+export async function getPatients(search?: string) {
   const supabase = await createClient();
-  const { data, error } = await supabase
+
+  let query = supabase
     .from("patients")
-    .select("*")
+    .select("*, vitals_readings(id, status, recorded_at, heart_rate_bpm, blood_pressure)")
     .order("created_at", { ascending: false });
 
+  if (search) {
+    query = query.ilike("full_name", `%${search}%`);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
-  return data;
+
+  return (data ?? []).map((patient) => {
+    const readings = patient.vitals_readings ?? [];
+    const latest = readings[0] ?? null;
+    const pendingCount = readings.filter((r: any) => r.status === "pending").length;
+    const criticalCount = readings.filter((r: any) => {
+      if (!r.heart_rate_bpm || !r.blood_pressure) return false;
+      const [sys] = r.blood_pressure.split("/").map(Number);
+      return r.heart_rate_bpm < 50 || r.heart_rate_bpm > 120 || sys < 90 || sys > 180;
+    }).length;
+
+    return {
+      ...patient,
+      totalReadings: readings.length,
+      pendingCount,
+      criticalCount,
+      latestReading: latest,
+    };
+  });
+}
+
+export async function getPatientWithReadings(id: string) {
+  const supabase = await createClient();
+
+  const { data: patient, error: patientError } = await supabase
+    .from("patients")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (patientError) throw patientError;
+
+  const { data: readings, error: readingsError } = await supabase
+    .from("vitals_readings")
+    .select("*")
+    .eq("patient_id", id)
+    .order("recorded_at", { ascending: false });
+
+  if (readingsError) throw readingsError;
+
+  return { patient, readings: readings ?? [] };
 }
 
 export async function addPatient(formData: {

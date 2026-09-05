@@ -1,24 +1,22 @@
 import { Suspense } from "react";
-import { getReadings } from "./actions/readings";
+import { getPatients } from "./actions/patients";
 import { SearchBar } from "@/components/SearchBar";
-import { StatusFilter } from "@/components/StatusFilter";
-import { ReadingsList } from "@/components/ReadingsList";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage(props: {
-  searchParams: Promise<{ search?: string; status?: string }>;
+  searchParams: Promise<{ search?: string }>;
 }) {
-  const { search, status } = await props.searchParams;
+  const { search } = await props.searchParams;
 
-  let readings;
+  let patients;
   let error = null;
   try {
-    readings = await getReadings(search, status);
+    patients = await getPatients(search);
   } catch (e: any) {
-    error = e.message ?? "Failed to load readings";
-    readings = [];
+    error = e.message ?? "Failed to load patients";
+    patients = [];
   }
 
   return (
@@ -30,7 +28,7 @@ export default async function HomePage(props: {
               Vital Signs Dashboard
             </h1>
             <p className="text-sm text-gray-500">
-              {readings.length} reading{readings.length !== 1 ? "s" : ""}
+              {patients.length} patient{patients.length !== 1 ? "s" : ""}
             </p>
           </div>
           <div className="flex gap-2">
@@ -44,12 +42,9 @@ export default async function HomePage(props: {
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-4 py-6">
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="mb-4">
           <Suspense>
             <SearchBar />
-          </Suspense>
-          <Suspense>
-            <StatusFilter />
           </Suspense>
         </div>
         {error ? (
@@ -62,12 +57,101 @@ export default async function HomePage(props: {
               Retry
             </button>
           </div>
-        ) : readings.length === 0 ? (
+        ) : patients.length === 0 ? (
           <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-gray-500">
-            {search || status ? "No readings match your filters." : "No readings yet. Add a reading to get started."}
+            {search ? "No patients match your search." : "No patients yet. Add a patient to get started."}
           </div>
         ) : (
-          <ReadingsList readings={readings as any} />
+          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Patient
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Age
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Total Readings
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Pending
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Latest Reading
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 bg-white">
+                {patients.map((patient: any) => {
+                  const age = patient.date_of_birth
+                    ? Math.floor(
+                        (Date.now() - new Date(patient.date_of_birth).getTime()) /
+                          (365.25 * 24 * 60 * 60 * 1000)
+                      )
+                    : null;
+
+                  const latest = patient.latestReading;
+                  const latestTime = latest?.recorded_at
+                    ? new Date(latest.recorded_at).toLocaleString()
+                    : "—";
+
+                  const hasCritical = patient.criticalCount > 0;
+
+                  return (
+                    <tr
+                      key={patient.id}
+                      className={`cursor-pointer transition-colors hover:bg-blue-50 ${
+                        hasCritical ? "bg-red-50" : ""
+                      }`}
+                    >
+                      <td className="px-6 py-4">
+                        <Link
+                          href={`/patients/${patient.id}`}
+                          className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                          {patient.full_name}
+                        </Link>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {age !== null ? `${age}y` : "—"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {patient.totalReadings}
+                      </td>
+                      <td className="px-6 py-4 text-sm">
+                        {patient.pendingCount > 0 ? (
+                          <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
+                            {patient.pendingCount} pending
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">0</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {latestTime}
+                      </td>
+                      <td className="px-6 py-4 text-sm">
+                        {hasCritical ? (
+                          <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
+                            {patient.criticalCount} critical
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                            Normal
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </main>
     </div>

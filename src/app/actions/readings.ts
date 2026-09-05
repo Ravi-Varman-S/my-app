@@ -64,6 +64,46 @@ export async function deleteReading(id: string) {
   revalidatePath("/");
 }
 
+export async function getReading(id: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("vitals_readings")
+    .select("*, patients(*)")
+    .eq("id", id)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateReading(
+  id: string,
+  formData: {
+    heart_rate_bpm: number | null;
+    blood_pressure: string | null;
+    spo2_percent: number | null;
+    temperature_c: number | null;
+    notes: string | null;
+  }
+) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("vitals_readings")
+    .update({
+      heart_rate_bpm: formData.heart_rate_bpm,
+      blood_pressure: formData.blood_pressure || null,
+      spo2_percent: formData.spo2_percent,
+      temperature_c: formData.temperature_c,
+      notes: formData.notes || null,
+    })
+    .eq("id", id);
+
+  if (error) throw error;
+  revalidatePath("/");
+}
+
 export async function addReading(formData: {
   patient_id: string;
   heart_rate_bpm: number | null;
