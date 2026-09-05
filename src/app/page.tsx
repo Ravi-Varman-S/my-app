@@ -1,6 +1,7 @@
 import { Suspense } from "react";
-import { getPatients } from "./actions/patients";
+import { getPatients, deletePatient } from "./actions/patients";
 import { SearchBar } from "@/components/SearchBar";
+import { DeleteButton } from "@/components/DeleteButton";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -84,6 +85,9 @@ export default async function HomePage(props: {
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                     Status
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
@@ -105,7 +109,7 @@ export default async function HomePage(props: {
                   return (
                     <tr
                       key={patient.id}
-                      className={`cursor-pointer transition-colors hover:bg-blue-50 ${
+                      className={`transition-colors hover:bg-blue-50 ${
                         hasCritical ? "bg-red-50" : ""
                       }`}
                     >
@@ -145,6 +149,15 @@ export default async function HomePage(props: {
                             Normal
                           </span>
                         )}
+                      </td>
+                      <td className="px-6 py-4 text-sm">
+                        <DeleteButton
+                          onConfirm={async () => {
+                            "use server";
+                            await deletePatient(patient.id);
+                          }}
+                          label="Delete Patient"
+                        />
                       </td>
                     </tr>
                   );
