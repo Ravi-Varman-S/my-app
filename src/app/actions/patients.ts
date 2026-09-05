@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { checkBreaches, type VitalReading, type Breach } from "@/lib/thresholds";
 
 export async function getPatients(search?: string) {
   const supabase = await createClient();
@@ -48,12 +49,18 @@ export async function getPatients(search?: string) {
       return breaches.length > 0;
     }).length;
 
+    let latestBreaches: Breach[] = [];
+    if (latest) {
+      latestBreaches = checkBreaches(latest as VitalReading);
+    }
+
     return {
       ...patient,
       totalReadings: readings.length,
       pendingCount,
       criticalCount,
       latestReading: latest,
+      latestBreaches,
     };
   });
 }

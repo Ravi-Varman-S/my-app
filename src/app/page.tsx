@@ -104,13 +104,14 @@ export default async function HomePage(props: {
                     ? new Date(latest.recorded_at).toLocaleString()
                     : "—";
 
-                  const hasCritical = patient.criticalCount > 0;
+                  const latestBreaches = patient.latestBreaches ?? [];
+                  const latestHasBreach = latestBreaches.length > 0;
 
                   return (
                     <tr
                       key={patient.id}
                       className={`transition-colors hover:bg-blue-50 ${
-                        hasCritical ? "bg-red-50" : ""
+                        latestHasBreach ? "bg-red-50" : ""
                       }`}
                     >
                       <td className="px-6 py-4">
@@ -140,10 +141,17 @@ export default async function HomePage(props: {
                         {latestTime}
                       </td>
                       <td className="px-6 py-4 text-sm">
-                        {hasCritical ? (
-                          <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
-                            {patient.criticalCount} critical
-                          </span>
+                        {latestHasBreach ? (
+                          <div className="flex flex-wrap gap-1">
+                            {latestBreaches.map((b: any, i: number) => (
+                              <span
+                                key={i}
+                                className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800"
+                              >
+                                {b.label}: {b.value}
+                              </span>
+                            ))}
+                          </div>
                         ) : (
                           <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
                             Normal
