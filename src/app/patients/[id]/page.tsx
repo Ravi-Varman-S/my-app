@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getPatientWithReadings } from "@/app/actions/patients";
 import { deleteReading } from "@/app/actions/readings";
 import { AcknowledgeButton } from "@/components/AcknowledgeButton";
-import { DeleteButton } from "@/components/DeleteButton";
+import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import { checkBreaches, parseBloodPressure } from "@/lib/thresholds";
 
 export const dynamic = "force-dynamic";
@@ -196,11 +196,13 @@ export default async function PatientDetailPage(props: {
                           >
                             Edit
                           </Link>
-                          <DeleteButton
+                          <DeleteConfirmModal
                             onConfirm={async () => {
                               "use server";
                               await deleteReading(reading.id);
                             }}
+                            title="Delete Reading"
+                            message="Are you sure you want to delete this reading? This action cannot be undone."
                           />
                           {reading.status === "pending" && (
                             <AcknowledgeButton readingId={reading.id} acknowledged={false} />

@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { getPatients, deletePatient } from "./actions/patients";
 import { SearchBar } from "@/components/SearchBar";
-import { DeleteButton } from "@/components/DeleteButton";
+import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -151,11 +151,13 @@ export default async function HomePage(props: {
                         )}
                       </td>
                       <td className="px-6 py-4 text-sm">
-                        <DeleteButton
+                        <DeleteConfirmModal
                           onConfirm={async () => {
                             "use server";
                             await deletePatient(patient.id);
                           }}
+                          title="Delete Patient"
+                          message={`Are you sure you want to delete "${patient.full_name}"? All their readings will also be deleted.`}
                           label="Delete Patient"
                         />
                       </td>
